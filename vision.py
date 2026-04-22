@@ -5,19 +5,38 @@ import pyautogui
 import cv2
 import numpy as np
 import pytesseract
+import requests
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 Path("screenshot").mkdir(exist_ok=True)
 
+type_ids = {
+    "veldspar": 1230,
+    "scordite": 1228,
+    "pyroxeres": 1224
+}
+
+def load_prices():
+    try:
+        response = requests.get('https://esi.evetech.net/latest/markets/prices/?datasource=tranquility')
+        response.raise_for_status()
+        data = response.json()
+        prices = {}
+        for item in data:
+            type_id = item['type_id']
+            if type_id in type_ids.values():
+                name = [k for k, v in type_ids.items() if v == type_id][0]
+                prices[name] = item['adjusted_price']
+        return prices
+    except requests.RequestException as e:
+        print(f"Error loading prices: {e}")
+        return {}
+
 capture_width = 200
 capture_height = 30
 
-# цены на руды чегоо
-prices = {
-    "veldspar": 12.5,
-    "scordite": 15.0,
-    "pyroxeres": 45.0
-}
+# Загрузка цен с рынка
+prices = load_prices()
 
 
 sizex, sizey = pyautogui.size()
